@@ -17,7 +17,7 @@ namespace LinkedIn.Droid
     {
         // Class Debug Tag
         private static string Tag = typeof(LinkedInClientManager).FullName;
-        static int AuthActivityID = Tag.GetHashCode() % Int16.MaxValue;
+        public static int AuthActivityID = Tag.GetHashCode() % Int16.MaxValue;
         public static LISessionManager LinkedInSessionManager { get; set; }
         public static Activity CurrentActivity { get; set; }
 

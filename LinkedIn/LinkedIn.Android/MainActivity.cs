@@ -27,7 +27,9 @@ namespace LinkedIn.Droid
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
-            LinkedInClientManager.ManagerInstance.OnActivityResult(requestCode, resultCode, data);
+
+            if (requestCode == LinkedInClientManager.AuthActivityID)
+                LinkedInClientManager.ManagerInstance.OnActivityResult(requestCode, resultCode, data);
         }
     }
 }
