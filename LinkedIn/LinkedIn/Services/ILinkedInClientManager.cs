@@ -6,7 +6,6 @@ using LinkedIn.Models;
 
 namespace LinkedIn.Services
 {
-
     public enum LinkedInActionStatus
     {
         Canceled,
@@ -50,7 +49,11 @@ namespace LinkedIn.Services
         }
     }
 
-    interface ILinkedInClientManager
+
+    /// <summary>
+    /// Interface for LinkedInClientManager
+    /// </summary>
+    public interface ILinkedInClientManager
     {
         event EventHandler<LinkedInClientResultEventArgs<LinkedInUser>> OnLogin;
         event EventHandler OnLogout;
