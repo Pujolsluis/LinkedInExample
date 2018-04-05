@@ -55,9 +55,9 @@ namespace LinkedIn.Services
     /// </summary>
     public interface ILinkedInClientManager
     {
-        event EventHandler<LinkedInClientResultEventArgs<LinkedInUser>> OnLogin;
+        event EventHandler<LinkedInClientResultEventArgs<string>> OnLogin;
         event EventHandler OnLogout;
-        Task<LinkedInResponse<LinkedInUser>> LoginAsync();
+        Task<LinkedInResponse<string>> LoginAsync();
         void Logout();
         bool IsLoggedIn { get; }
     }
