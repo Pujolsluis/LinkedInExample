@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using LinkedIn.Views;
 using Xamarin.Forms;
 
 namespace LinkedIn
@@ -13,7 +9,7 @@ namespace LinkedIn
 		{
 			InitializeComponent();
 
-			MainPage = new LinkedIn.Views.LoginPage();
+		    MainPage = new NavigationPage(new LoginPage());
 		}
 
 		protected override void OnStart ()

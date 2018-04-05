@@ -87,6 +87,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
+    <AndroidResource Include="Resources\drawable\linkedin_logo.png" />
+    <AndroidResource Include="Resources\drawable-xhdpi\linkedin_logo.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\linkedin_logo.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\linkedin_logo.png" />
   </ItemGroup>
   <Import Project="..\LinkedIn\LinkedIn.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
