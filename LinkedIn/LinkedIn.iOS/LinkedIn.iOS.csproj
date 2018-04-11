@@ -120,6 +120,9 @@
     <Reference Include="Xamarin.iOS" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>11.0.2</Version>
+    </PackageReference>
     <PackageReference Include="PropertyChanged.Fody">
       <Version>2.4.0</Version>
     </PackageReference>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
@@ -20,10 +21,11 @@ namespace LinkedIn.Droid
         public static int AuthActivityID = Tag.GetHashCode() % Int16.MaxValue;
         public static LISessionManager LinkedInSessionManager { get; set; }
         public static Activity CurrentActivity { get; set; }
+        public List<string> FieldsList { get; set; }
 
         static TaskCompletionSource<LinkedInResponse<string>> _loginTcs;
 
-        public static LinkedInClientManager ManagerInstance { get; } = new LinkedInClientManager();
+        //public static LinkedInClientManager ManagerInstance { get; } = new LinkedInClientManager();
 
         public bool IsLoggedIn { get; }
 
@@ -47,22 +49,29 @@ namespace LinkedIn.Droid
         
 
 
-        public async Task<LinkedInResponse<string>> LoginAsync()
+        public async Task<LinkedInResponse<string>> LoginAsync(List<string> fieldsList)
         {
             _loginTcs = new TaskCompletionSource<LinkedInResponse<string>>();
-            LinkedInSessionManager.Init(CurrentActivity, BuildScope(), ManagerInstance, false);
+            FieldsList = fieldsList;
+            LinkedInSessionManager.Init(CurrentActivity, BuildScope(), true, () =>
+            {
+                GetUserProfile(FieldsList);
+            }, error =>
+            {
+                
+            });
 
             return await _loginTcs.Task;
         }
 
         public void Logout()
         {
-
+            LinkedInSessionManager.ClearSession();
         }
 
         private static Scope BuildScope()
         {
-            return Scope.Build(Scope.RBasicprofile);
+            return Scope.Build(Scope.RBasicprofile, Scope.REmailaddress);
         }
 
 
@@ -79,19 +88,32 @@ namespace LinkedIn.Droid
 
         public void OnAuthSuccess()
         {
-             GetUserProfile();
+             GetUserProfile(FieldsList);
         }
 
-        //TODO ASK RENDY ABOUT TO CALLING CHANGING THIS Instead of doing directly in the activity?
         public void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
-            ManagerInstance.OnActivityResult(requestCode, resultCode, data);
+            LISessionManager.GetInstance(Application.Context).OnActivityResult(CurrentActivity, requestCode, (int) resultCode, data);
         }
 
-        private void GetUserProfile()
+        private void GetUserProfile(List<string> fieldsList)
         {
+            string fields = "";
+
+            for (int i = 0; i < fieldsList.Count; i++)
+            {
+                if (i != fieldsList.Count - 1)
+                {
+                    fields += fieldsList[i] + ",";
+                }
+                else
+                {
+                    fields += fieldsList[i];
+                }
+            }
+
             var apiRequestUrl =
-                "https://api.linkedin.com/v1/people/~:(id,first-name,last-name,num-connections,picture-url,location,positions)?format=json";
+                "https://api.linkedin.com/v1/people/~:(" + fields + ")?format=json";
             APIHelper.GetInstance(CurrentActivity).GetRequest(CurrentActivity, apiRequestUrl,
                 apiResponse =>
                 {
@@ -99,17 +121,17 @@ namespace LinkedIn.Droid
                         new LinkedInClientResultEventArgs<string>(apiResponse.ResponseDataAsString, LinkedInActionStatus.Completed, apiResponse.StatusCode.ToString());
 
                     // Send the result to the receivers
-                    _onLogin.Invoke(ManagerInstance, linkedInArgs);
+                    _onLogin.Invoke(this, linkedInArgs);
                     _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
                 }, 
                 error =>
                 {
                     //TODO REPLACE OR VERIFY IF THIS IS CORRECT
                     var linkedInArgs =
-                        new LinkedInClientResultEventArgs<string>(error.ApiErrorResponse.Message, LinkedInActionStatus.Completed, error.ApiErrorResponse.Status.ToString());
+                        new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Completed, error.ApiErrorResponse.Status.ToString());
 
                     // Send the result to the receivers
-                    _onLogin.Invoke(ManagerInstance, linkedInArgs);
+                    _onLogin.Invoke(this, linkedInArgs);
                     _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
                 });
         }

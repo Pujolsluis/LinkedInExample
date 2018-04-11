@@ -57,7 +57,7 @@ namespace LinkedIn.Services
     {
         event EventHandler<LinkedInClientResultEventArgs<string>> OnLogin;
         event EventHandler OnLogout;
-        Task<LinkedInResponse<string>> LoginAsync();
+        Task<LinkedInResponse<string>> LoginAsync(List<string> fieldsList);
         void Logout();
         bool IsLoggedIn { get; }
     }
