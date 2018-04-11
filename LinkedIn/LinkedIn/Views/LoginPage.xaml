@@ -53,7 +53,7 @@
                 </StackLayout>
             </StackLayout>
 
-            <Button Text="Login"
+            <Button Text="Login" TextColor="White"
                     VerticalOptions="EndAndExpand"
                     IsVisible="{Binding IsLoggedIn, Converter={StaticResource InvertBooleanConverter}}"
                     Command="{Binding LoginCommand}"
