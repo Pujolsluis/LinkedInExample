@@ -49,7 +49,7 @@ namespace LinkedIn.Droid
                 GetUserProfile(FieldsList);
             }, error =>
             {
-
+                // Do something with error
             });
 
             return await _loginTcs.Task;
