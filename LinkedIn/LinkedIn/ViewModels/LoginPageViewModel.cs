@@ -39,13 +39,11 @@ namespace LinkedIn.ViewModels
 
         public ICommand LoginCommand { get; set; }
         public ICommand LogoutCommand { get; set; }
-        //private IGoogleClientManager googleClientManager;
 
         public LoginPageViewModel()
         {
             LoginCommand = new Command(LoginAsync);
             LogoutCommand = new Command(Logout);
-            //googleClientManager = CrossGoogleClient.Current;
             IsLoggedIn = false;
 
             LinkedInClientManager = DependencyService.Get<ILinkedInClientManager>();
@@ -53,13 +51,9 @@ namespace LinkedIn.ViewModels
 
         public void LoginAsync()
         {
-            //googleClientManager.OnLogin += OnLoginCompleted;
-            //googleClientManager.LoginAsync();
-
             LinkedInClientManager.OnLogin += OnLoginCompleted;
             List<string> fieldsList = new List<string> {"first-name", "last-name", "email-address", "picture-url"};
             LinkedInClientManager.LoginAsync(fieldsList);
-            //LinkedInClientManager.Logout();
         }
 
         private void OnLoginCompleted(object sender, LinkedInClientResultEventArgs<string> linkedInClientResultEventArgs)
@@ -72,46 +66,26 @@ namespace LinkedIn.ViewModels
                 user.Name = data["firstName"] + " " + data["lastName"];
                 user.Email = data["emailAddress"].ToString();
                 user.Picture = new Uri(data["pictureUrl"].ToString());
-                App.Current.MainPage.DisplayAlert("Success", "It works!", "OK");
+               // App.Current.MainPage.DisplayAlert("Success", "It works!", "OK");
                 IsLoggedIn = true;
             }
             else
             {
                 App.Current.MainPage.DisplayAlert("Error", linkedInClientResultEventArgs.Message, "OK");
             }
+            LinkedInClientManager.OnLogin -= OnLoginCompleted;
         }
-
-
-        //private void OnLoginCompleted(object sender, GoogleClientResultEventArgs<GoogleUser> loginEventArgs)
-        //{
-        //    if (loginEventArgs.Data != null)
-        //    {
-        //        user = loginEventArgs.Data;
-
-        //        // Log the current user email
-        //        Debug.WriteLine(user.Email);
-        //        IsLoggedIn = true;
-        //    }
-        //    else
-        //    {
-        //        App.Current.MainPage.DisplayAlert("Error", loginEventArgs.Message, "OK");
-        //    }
-
-        //    googleClientManager.OnLogin -= OnLoginCompleted;
-
-        //}
 
         public void Logout()
         {
-            //googleClientManager.OnLogout += OnLogoutCompleted;
-            //googleClientManager.Logout();
+            LinkedInClientManager.OnLogout += OnLogoutCompleted;
+            LinkedInClientManager.Logout();
         }
 
         private void OnLogoutCompleted(object sender, EventArgs loginEventArgs)
         {
             IsLoggedIn = false;
-            user.Email = "Offline";
-            //googleClientManager.OnLogout -= OnLogoutCompleted;
+            LinkedInClientManager.OnLogout -= OnLogoutCompleted;
         }
 
     }

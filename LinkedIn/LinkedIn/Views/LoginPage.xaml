@@ -59,7 +59,7 @@
                     Command="{Binding LoginCommand}"
                     BackgroundColor="Accent"/>
 
-            <Button Text="Logout"
+            <Button Text="Logout" TextColor="White"
                     VerticalOptions="EndAndExpand"
                     IsVisible="{Binding IsLoggedIn}"
                     Command="{Binding LogoutCommand}"

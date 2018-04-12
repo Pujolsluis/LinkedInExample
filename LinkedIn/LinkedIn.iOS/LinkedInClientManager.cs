@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using LinkedIn.iOS;
 using LinkedIn.Models;
@@ -11,7 +12,7 @@ namespace LinkedIn.iOS
     {
         public event EventHandler<LinkedInClientResultEventArgs<string>> OnLogin;
         public event EventHandler OnLogout;
-        public Task<LinkedInResponse<string>> LoginAsync()
+        public Task<LinkedInResponse<string>> LoginAsync(List<string> fieldsList)
         {
             throw new NotImplementedException();
         }

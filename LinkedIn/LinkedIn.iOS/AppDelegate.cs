@@ -4,6 +4,7 @@ using System.Linq;
 
 using Foundation;
 using UIKit;
+using Xamarin.iOS.LinkedIn;
 
 namespace LinkedIn.iOS
 {
@@ -24,8 +25,16 @@ namespace LinkedIn.iOS
         {
             global::Xamarin.Forms.Forms.Init();
             LoadApplication(new App());
-
             return base.FinishedLaunching(app, options);
+        }
+
+        public override bool OpenUrl(UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
+        {
+            if (CallbackHandler.ShouldHandleUrl(url))
+            {
+                CallbackHandler.OpenUrl(application, url, sourceApplication, annotation);
+            }
+            return true;
         }
     }
 }

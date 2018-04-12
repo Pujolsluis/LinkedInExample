@@ -25,17 +25,12 @@ namespace LinkedIn.Droid
 
         static TaskCompletionSource<LinkedInResponse<string>> _loginTcs;
 
-        //public static LinkedInClientManager ManagerInstance { get; } = new LinkedInClientManager();
-
         public bool IsLoggedIn { get; }
-
 
         public static void Initialize(Activity activity)
         {
             CurrentActivity = activity;
-
             LinkedInSessionManager = LISessionManager.GetInstance(Application.Context);
-
         }
 
         private static EventHandler<LinkedInClientResultEventArgs<string>> _onLogin;
@@ -44,10 +39,6 @@ namespace LinkedIn.Droid
             add => _onLogin += value;
             remove => _onLogin -= value;
         }
-
-        public event EventHandler OnLogout;
-        
-
 
         public async Task<LinkedInResponse<string>> LoginAsync(List<string> fieldsList)
         {
@@ -58,15 +49,29 @@ namespace LinkedIn.Droid
                 GetUserProfile(FieldsList);
             }, error =>
             {
-                
+
             });
 
             return await _loginTcs.Task;
         }
 
+
+        static EventHandler _onLogout;
+        public event EventHandler OnLogout
+        {
+            add => _onLogout += value;
+            remove => _onLogout -= value;
+        }
+
+        protected virtual void OnLogoutCompleted(EventArgs e)
+        {
+            _onLogout?.Invoke(this, e);
+        }
+
         public void Logout()
         {
             LinkedInSessionManager.ClearSession();
+            OnLogoutCompleted(EventArgs.Empty);
         }
 
         private static Scope BuildScope()
