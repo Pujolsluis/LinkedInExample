@@ -40,13 +40,12 @@ namespace LinkedIn.Droid
             remove => _onLogin -= value;
         }
 
-        public async Task<LinkedInResponse<string>> LoginAsync(List<string> fieldsList)
+        public async Task<LinkedInResponse<string>> LoginAsync()
         {
             _loginTcs = new TaskCompletionSource<LinkedInResponse<string>>();
-            FieldsList = fieldsList;
             LinkedInSessionManager.Init(CurrentActivity, BuildScope(), true, () =>
             {
-                GetUserProfile(FieldsList);
+                GetUserProfile();
             }, error =>
             {
                 // Do something with error
@@ -101,7 +100,33 @@ namespace LinkedIn.Droid
             LISessionManager.GetInstance(Application.Context).OnActivityResult(CurrentActivity, requestCode, (int) resultCode, data);
         }
 
-        private void GetUserProfile(List<string> fieldsList)
+        void GetUserProfile()
+        {
+            var apiRequestUrl =
+                "https://api.linkedin.com/v1/people/~?format=json";
+            APIHelper.GetInstance(CurrentActivity).GetRequest(CurrentActivity, apiRequestUrl,
+                apiResponse =>
+                {
+                    var linkedInArgs =
+                        new LinkedInClientResultEventArgs<string>(apiResponse.ResponseDataAsString, LinkedInActionStatus.Completed, apiResponse.StatusCode.ToString());
+
+                    // Send the result to the receivers
+                    _onLogin.Invoke(this, linkedInArgs);
+                    _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+                },
+                error =>
+                {
+                    //TODO REPLACE By Exceptions
+                    var linkedInArgs =
+                        new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Completed, error.ApiErrorResponse.Status.ToString());
+
+                    // Send the result to the receivers
+                    _onLogin.Invoke(this, linkedInArgs);
+                    _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+                });
+        }
+
+        public void GetUserProfile(List<string> fieldsList)
         {
             string fields = "";
 
@@ -118,7 +143,14 @@ namespace LinkedIn.Droid
             }
 
             var apiRequestUrl =
-                "https://api.linkedin.com/v1/people/~:(" + fields + ")?format=json";
+                "https://api.linkedin.com/v1/people/~?format=json";
+
+            if (fieldsList != null && fieldsList.Count > 0)
+            {
+                apiRequestUrl =
+                    "https://api.linkedin.com/v1/people/~:(" + fields + ")?format=json";
+            }
+
             APIHelper.GetInstance(CurrentActivity).GetRequest(CurrentActivity, apiRequestUrl,
                 apiResponse =>
                 {
@@ -131,7 +163,7 @@ namespace LinkedIn.Droid
                 }, 
                 error =>
                 {
-                    //TODO REPLACE OR VERIFY IF THIS IS CORRECT
+                    //TODO REPLACE By Exceptions
                     var linkedInArgs =
                         new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Completed, error.ApiErrorResponse.Status.ToString());
 

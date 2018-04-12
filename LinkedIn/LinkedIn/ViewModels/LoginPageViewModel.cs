@@ -53,7 +53,7 @@ namespace LinkedIn.ViewModels
         {
             LinkedInClientManager.OnLogin += OnLoginCompleted;
             List<string> fieldsList = new List<string> {"first-name", "last-name", "email-address", "picture-url"};
-            LinkedInClientManager.LoginAsync(fieldsList);
+            LinkedInClientManager.LoginAsync();
         }
 
         private void OnLoginCompleted(object sender, LinkedInClientResultEventArgs<string> linkedInClientResultEventArgs)
@@ -64,8 +64,8 @@ namespace LinkedIn.ViewModels
                 var data = JObject.Parse(linkedInClientResultEventArgs.Data);
 
                 user.Name = data["firstName"] + " " + data["lastName"];
-                user.Email = data["emailAddress"].ToString();
-                user.Picture = new Uri(data["pictureUrl"].ToString());
+                //user.Email = data["emailAddress"].ToString();
+                //user.Picture = new Uri(data["pictureUrl"].ToString());
                // App.Current.MainPage.DisplayAlert("Success", "It works!", "OK");
                 IsLoggedIn = true;
             }

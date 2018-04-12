@@ -6,6 +6,16 @@ using LinkedIn.Models;
 
 namespace LinkedIn.Services
 {
+    public enum LinkedInClientScopes
+    {
+        EmailAddress,
+        BasicProfile,
+        ContactInfo,
+        FullProfile,
+        CompanyAdmin,
+        Share
+    }
+
     public enum LinkedInActionStatus
     {
         Canceled,
@@ -57,7 +67,8 @@ namespace LinkedIn.Services
     {
         event EventHandler<LinkedInClientResultEventArgs<string>> OnLogin;
         event EventHandler OnLogout;
-        Task<LinkedInResponse<string>> LoginAsync(List<string> fieldsList);
+        Task<LinkedInResponse<string>> LoginAsync();
+        void GetUserProfile(List<string> fieldsList);
         void Logout();
         bool IsLoggedIn { get; }
     }

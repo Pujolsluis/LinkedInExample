@@ -23,10 +23,10 @@ namespace LinkedIn.iOS
             remove => _onLogin -= value;
         }
 
-        public async Task<LinkedInResponse<string>> LoginAsync(List<string> fieldsList)
+        public async Task<LinkedInResponse<string>> LoginAsync()
         {
             _loginTcs = new TaskCompletionSource<LinkedInResponse<string>>();
-            FieldsList = fieldsList;
+            //FieldsList = fieldsList;
 
             SessionManager.CreateSessionWithAuth(
                 new[] { Permission.BasicProfile, Permission.EmailAddress },
@@ -34,7 +34,7 @@ namespace LinkedIn.iOS
                 true,
                 returnState =>
                 {
-                    GetUserProfile(FieldsList);
+                    GetUserProfile();
                     Debug.WriteLine("Auth Successful");
                 },
                 error =>
@@ -64,13 +64,42 @@ namespace LinkedIn.iOS
             OnLogoutCompleted(EventArgs.Empty);
         }
 
-        private void GetUserProfile(List<string> fieldsList)
+        void GetUserProfile()
+        {
+            if (SessionManager.HasValidSession)
+            {
+                var apiRequestUrl =
+                    "https://api.linkedin.com/v1/people/~?format=json";
+
+               ApiHelper.SharedInstance.GetRequest(
+                    apiRequestUrl,
+                    apiResponse => {
+                        var linkedInArgs =
+                            new LinkedInClientResultEventArgs<string>(apiResponse.Data.ToString(), LinkedInActionStatus.Completed, apiResponse.StatusCode.ToString());
+
+                        // Send the result to the receivers
+                        _onLogin.Invoke(this, linkedInArgs);
+                        _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+                    },
+                    error => {
+                        //TODO REPLACE By Exceptions
+                        var linkedInArgs =
+                            new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Error, error.LocalizedDescription);
+
+                        // Send the result to the receivers
+                        _onLogin.Invoke(this, linkedInArgs);
+                        _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+                    });
+            }
+        }
+
+        public void GetUserProfile(List<string> fieldsList)
         {
             if (SessionManager.HasValidSession)
             {
                 string fields = "";
 
-                for (int i = 0; i < fieldsList.Count; i++)
+                for (int i = 0; i < fieldsList?.Count; i++)
                 {
                     if (i != fieldsList.Count - 1)
                     {
@@ -83,7 +112,13 @@ namespace LinkedIn.iOS
                 }
 
                 var apiRequestUrl =
-                    "https://api.linkedin.com/v1/people/~:(" + fields + ")?format=json";
+                    "https://api.linkedin.com/v1/people/~?format=json";
+
+                if (fieldsList != null && fieldsList.Count > 0)
+                {
+                    apiRequestUrl =
+                        "https://api.linkedin.com/v1/people/~:(" + fields + ")?format=json";
+                }
 
                 ApiHelper.SharedInstance.GetRequest(
                     apiRequestUrl,
@@ -96,9 +131,9 @@ namespace LinkedIn.iOS
                         _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
                     },
                     error => {
-                        //TODO REPLACE OR VERIFY IF THIS IS CORRECT
+                        //TODO REPLACE By Exceptions
                         var linkedInArgs =
-                            new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Completed, error.LocalizedDescription);
+                            new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Error, error.LocalizedDescription);
 
                         // Send the result to the receivers
                         _onLogin.Invoke(this, linkedInArgs);
