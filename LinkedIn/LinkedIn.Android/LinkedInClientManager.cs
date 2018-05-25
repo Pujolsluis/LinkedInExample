@@ -44,11 +44,17 @@ namespace LinkedIn.Droid
         {
             _loginTcs = new TaskCompletionSource<LinkedInResponse<string>>();
             LinkedInSessionManager.Init(CurrentActivity, BuildScope(), true, () =>
-            {
-                GetUserProfile();
-            }, error =>
-            {
-                // Do something with error
+			{
+				GetUserProfile();
+			}, error =>
+			{
+				LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+				errorEventArgs.Error = LinkedInClientErrorType.SignInDefaultError;
+				errorEventArgs.Message = LinkedInClientBaseException.SignInDefaultErrorMessage;
+                _onError?.Invoke(this, errorEventArgs);
+
+				// Do something with error
+				_loginTcs.TrySetException(new LinkedInClientBaseException());
             });
 
             return await _loginTcs.Task;
@@ -65,6 +71,18 @@ namespace LinkedIn.Droid
         protected virtual void OnLogoutCompleted(EventArgs e)
         {
             _onLogout?.Invoke(this, e);
+        }
+
+		static EventHandler<LinkedInClientErrorEventArgs> _onError;
+		public event EventHandler<LinkedInClientErrorEventArgs> OnError
+        {
+            add => _onError += value;
+            remove => _onError -= value;
+        }
+
+		protected virtual void OnGoogleClientError(LinkedInClientErrorEventArgs e)
+        {
+            _onError?.Invoke(this, e);
         }
 
         public void Logout()
@@ -116,13 +134,12 @@ namespace LinkedIn.Droid
                 },
                 error =>
                 {
-                    //TODO REPLACE By Exceptions
-                    var linkedInArgs =
-                        new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Completed, error.ApiErrorResponse.Status.ToString());
+				    LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+    				errorEventArgs.Error = LinkedInClientErrorType.ApiHandlerError;
+    				errorEventArgs.Message = LinkedInClientBaseException.ApiHelperErrorMessage;
+				    _onError?.Invoke(this, errorEventArgs);
 
-                    // Send the result to the receivers
-                    _onLogin.Invoke(this, linkedInArgs);
-                    _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+				    _loginTcs.TrySetException(new LinkedInClientApiHelperErrorException(error.ApiErrorResponse.Message));
                 });
         }
 
@@ -163,13 +180,12 @@ namespace LinkedIn.Droid
                 }, 
                 error =>
                 {
-                    //TODO REPLACE By Exceptions
-                    var linkedInArgs =
-                        new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Completed, error.ApiErrorResponse.Status.ToString());
+				    LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+                    errorEventArgs.Error = LinkedInClientErrorType.ApiHandlerError;
+                    errorEventArgs.Message = LinkedInClientBaseException.ApiHelperErrorMessage;
+                    _onError?.Invoke(this, errorEventArgs);
 
-                    // Send the result to the receivers
-                    _onLogin.Invoke(this, linkedInArgs);
-                    _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+				    _loginTcs.TrySetException(new LinkedInClientApiHelperErrorException(error.ApiErrorResponse.Message));
                 });
         }
     }

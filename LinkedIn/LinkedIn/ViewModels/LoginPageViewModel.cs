@@ -49,14 +49,29 @@ namespace LinkedIn.ViewModels
             LinkedInClientManager = DependencyService.Get<ILinkedInClientManager>();
         }
 
-        public void LoginAsync()
+        public async void LoginAsync()
         {
             LinkedInClientManager.OnLogin += OnLoginCompleted;
+			LinkedInClientManager.OnError += OnAuthError;
             List<string> fieldsList = new List<string> {"first-name", "last-name", "email-address", "picture-url"};
-            LinkedInClientManager.LoginAsync();
+			try
+			{
+				await LinkedInClientManager.LoginAsync();
+			}
+			catch (LinkedInClientBaseException exception)
+			{
+				await App.Current.MainPage.DisplayAlert("Error", exception.Message, "OK");
+				LinkedInClientManager.OnLogin -= OnLoginCompleted;
+				LinkedInClientManager.OnError -= OnAuthError;
+			}
         }
 
-        private void OnLoginCompleted(object sender, LinkedInClientResultEventArgs<string> linkedInClientResultEventArgs)
+		private void OnAuthError(object sender, LinkedInClientErrorEventArgs e)
+		{
+			App.Current.MainPage.DisplayAlert("Error", e.Message, "OK");
+		}
+
+		private void OnLoginCompleted(object sender, LinkedInClientResultEventArgs<string> linkedInClientResultEventArgs)
         {
             if (linkedInClientResultEventArgs.Data != null)
             {
@@ -74,6 +89,7 @@ namespace LinkedIn.ViewModels
                 App.Current.MainPage.DisplayAlert("Error", linkedInClientResultEventArgs.Message, "OK");
             }
             LinkedInClientManager.OnLogin -= OnLoginCompleted;
+			LinkedInClientManager.OnError -= OnAuthError;
         }
 
         public void Logout()

@@ -6,6 +6,18 @@ using LinkedIn.Models;
 
 namespace LinkedIn.Services
 {
+	public enum LinkedInClientErrorType
+    {
+        SignInDefaultError,
+        ApiHandlerError
+    }
+
+    public class LinkedInClientErrorEventArgs : EventArgs
+    {
+        public LinkedInClientErrorType Error { get; set; }
+        public string Message { get; set; }
+    }
+
     public enum LinkedInClientScopes
     {
         EmailAddress,
@@ -68,6 +80,7 @@ namespace LinkedIn.Services
         event EventHandler<LinkedInClientResultEventArgs<string>> OnLogin;
         event EventHandler OnLogout;
         Task<LinkedInResponse<string>> LoginAsync();
+		event EventHandler<LinkedInClientErrorEventArgs> OnError;
         void GetUserProfile(List<string> fieldsList);
         void Logout();
         bool IsLoggedIn { get; }
