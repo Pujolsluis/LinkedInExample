@@ -23,6 +23,18 @@ namespace LinkedIn.iOS
             remove => _onLogin -= value;
         }
 
+		static EventHandler<LinkedInClientErrorEventArgs> _onError;
+        public event EventHandler<LinkedInClientErrorEventArgs> OnError
+        {
+            add => _onError += value;
+            remove => _onError -= value;
+        }
+
+        protected virtual void OnLinkedInClientError(LinkedInClientErrorEventArgs e)
+        {
+            _onError?.Invoke(this, e);
+        }
+
         public async Task<LinkedInResponse<string>> LoginAsync()
         {
             _loginTcs = new TaskCompletionSource<LinkedInResponse<string>>();
@@ -39,7 +51,13 @@ namespace LinkedIn.iOS
                 },
                 error =>
                 {
-                    Debug.WriteLine("Auth Error: " + error.LocalizedFailureReason);
+				    LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+                    errorEventArgs.Error = LinkedInClientErrorType.SignInDefaultError;
+                    errorEventArgs.Message = LinkedInClientBaseException.SignInDefaultErrorMessage;
+                    _onError?.Invoke(this, errorEventArgs);
+
+                    // Do something with error
+				    _loginTcs.TrySetException(new LinkedInClientBaseException(error.LocalizedDescription));
                 });
 
             return await _loginTcs.Task;

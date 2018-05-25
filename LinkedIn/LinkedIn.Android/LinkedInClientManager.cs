@@ -54,7 +54,7 @@ namespace LinkedIn.Droid
                 _onError?.Invoke(this, errorEventArgs);
 
 				// Do something with error
-				_loginTcs.TrySetException(new LinkedInClientBaseException());
+				_loginTcs.TrySetException(new LinkedInClientBaseException(error.ToString()));
             });
 
             return await _loginTcs.Task;
@@ -80,7 +80,7 @@ namespace LinkedIn.Droid
             remove => _onError -= value;
         }
 
-		protected virtual void OnGoogleClientError(LinkedInClientErrorEventArgs e)
+		protected virtual void OnLinkedInClientError(LinkedInClientErrorEventArgs e)
         {
             _onError?.Invoke(this, e);
         }
@@ -185,7 +185,7 @@ namespace LinkedIn.Droid
                     errorEventArgs.Message = LinkedInClientBaseException.ApiHelperErrorMessage;
                     _onError?.Invoke(this, errorEventArgs);
 
-				    _loginTcs.TrySetException(new LinkedInClientApiHelperErrorException(error.ApiErrorResponse.Message));
+                    _loginTcs.TrySetException(new LinkedInClientApiHelperErrorException(error.ApiErrorResponse.Message));
                 });
         }
     }
