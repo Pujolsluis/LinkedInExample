@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Text;
 using System.Windows.Input;
 using LinkedIn.Models;
-using LinkedIn.Services;
 using Newtonsoft.Json.Linq;
+using Plugin.LinkedInClient;
+using Plugin.LinkedInClient.Shared;
 using Xamarin.Forms;
 
 namespace LinkedIn.ViewModels
@@ -46,7 +46,7 @@ namespace LinkedIn.ViewModels
             LogoutCommand = new Command(Logout);
             IsLoggedIn = false;
 
-            LinkedInClientManager = DependencyService.Get<ILinkedInClientManager>();
+            LinkedInClientManager = CrossLinkedInClient.Current;
         }
 
         public async void LoginAsync()
@@ -79,6 +79,9 @@ namespace LinkedIn.ViewModels
                 var data = JObject.Parse(linkedInClientResultEventArgs.Data);
 
                 user.Name = data["firstName"] + " " + data["lastName"];
+				//List<string> fieldList = new List<string>();
+				//fieldList.Add("pictureUrl");
+				//CrossLinkedInClient.Current.GetUserProfile(fieldList);
                 //user.Email = data["emailAddress"].ToString();
                 //user.Picture = new Uri(data["pictureUrl"].ToString());
                // App.Current.MainPage.DisplayAlert("Success", "It works!", "OK");

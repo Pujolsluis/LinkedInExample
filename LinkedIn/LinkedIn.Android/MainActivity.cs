@@ -3,19 +3,16 @@
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
-using Android.Runtime;
-using Android.Views;
 using Android.Widget;
 using Android.OS;
-using LinkedIn.Platform.Errors;
-using LinkedIn.Platform.Listeners;
+using Plugin.LinkedInClient;
 
 namespace LinkedIn.Droid
 {
     [Activity(Label = "LinkedIn", Icon = "@drawable/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
-        private LinkedInClientManager linkedInClientManager;
+		private LinkedInClientManager linkedInClientManager;
         protected override void OnCreate(Bundle bundle)
         {
             
@@ -24,7 +21,7 @@ namespace LinkedIn.Droid
 
             base.OnCreate(bundle);
             LinkedInClientManager.Initialize(this);
-            linkedInClientManager = new LinkedInClientManager();
+			linkedInClientManager = (LinkedInClientManager)CrossLinkedInClient.Current;
             global::Xamarin.Forms.Forms.Init(this, bundle);
             LoadApplication(new App());
         }
