@@ -15,6 +15,29 @@ namespace LinkedIn.iOS
         public List<string> FieldsList { get; set; }
 
         static TaskCompletionSource<LinkedInResponse<string>> _loginTcs;
+		static TaskCompletionSource<LinkedInResponse<string>> _getProfileFieldsTcs;
+
+
+        public bool IsLoggedIn { get; }
+
+		public string ActiveToken 
+		{
+            get
+            {
+				if (SessionManager.HasValidSession)
+					return SessionManager.SharedInstance.Session.AccessToken.AccessTokenValue;
+                return string.Empty;
+            }
+        }
+		public DateTime TokenExpirationDate  
+		{
+            get
+            {
+				if (SessionManager.HasValidSession)
+					return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(SessionManager.SharedInstance.Session.AccessToken.Expiration.SecondsSinceReferenceDate);
+                return TokenExpirationDate;
+            }
+        }
 
         private static EventHandler<LinkedInClientResultEventArgs<string>> _onLogin;
         public event EventHandler<LinkedInClientResultEventArgs<string>> OnLogin
@@ -46,6 +69,7 @@ namespace LinkedIn.iOS
                 true,
                 returnState =>
                 {
+				    var tokenExpiration = 
                     GetUserProfile();
                     Debug.WriteLine("Auth Successful");
                 },
@@ -100,19 +124,28 @@ namespace LinkedIn.iOS
                         _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
                     },
                     error => {
-                        //TODO REPLACE By Exceptions
-                        var linkedInArgs =
-                            new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Error, error.LocalizedDescription);
+					    LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+                        errorEventArgs.Error = LinkedInClientErrorType.SignInDefaultError;
+                        errorEventArgs.Message = LinkedInClientBaseException.SignInDefaultErrorMessage;
+                        _onError?.Invoke(this, errorEventArgs);
 
-                        // Send the result to the receivers
-                        _onLogin.Invoke(this, linkedInArgs);
-                        _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+                        // Do something with error
+                        _loginTcs.TrySetException(new LinkedInClientBaseException(error.LocalizedDescription));
                     });
             }
         }
 
-        public void GetUserProfile(List<string> fieldsList)
+		private static EventHandler<LinkedInClientResultEventArgs<string>> _onGetUserProfile;
+        public event EventHandler<LinkedInClientResultEventArgs<string>> OnGetUserProfile
         {
+            add => _onGetUserProfile += value;
+            remove => _onGetUserProfile -= value;
+        }
+
+		async Task<LinkedInResponse<string>> ILinkedInClientManager.GetUserProfile(List<string> fieldsList)
+        {
+			_getProfileFieldsTcs = new TaskCompletionSource<LinkedInResponse<string>>();
+
             if (SessionManager.HasValidSession)
             {
                 string fields = "";
@@ -145,21 +178,31 @@ namespace LinkedIn.iOS
                             new LinkedInClientResultEventArgs<string>(apiResponse.Data.ToString(), LinkedInActionStatus.Completed, apiResponse.StatusCode.ToString());
 
                         // Send the result to the receivers
-                        _onLogin.Invoke(this, linkedInArgs);
-                        _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+					    _onGetUserProfile.Invoke(this, linkedInArgs);
+					    _getProfileFieldsTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
                     },
                     error => {
-                        //TODO REPLACE By Exceptions
-                        var linkedInArgs =
-                            new LinkedInClientResultEventArgs<string>(null, LinkedInActionStatus.Error, error.LocalizedDescription);
+					    LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+                        errorEventArgs.Error = LinkedInClientErrorType.SignInDefaultError;
+                        errorEventArgs.Message = LinkedInClientBaseException.SignInDefaultErrorMessage;
+                        _onError?.Invoke(this, errorEventArgs);
 
-                        // Send the result to the receivers
-                        _onLogin.Invoke(this, linkedInArgs);
-                        _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+                        // Do something with error
+					    _getProfileFieldsTcs.TrySetException(new LinkedInClientBaseException(error.LocalizedDescription));
                     });
             }
+			else
+			{
+				LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+                errorEventArgs.Error = LinkedInClientErrorType.SignInDefaultError;
+                errorEventArgs.Message = LinkedInClientBaseException.SignInDefaultErrorMessage;
+                _onError?.Invoke(this, errorEventArgs);
+
+                // Do something with error
+                _getProfileFieldsTcs.TrySetException(new LinkedInClientBaseException("The Session manager doesnt have a valid session."));
+			}
+			return await _getProfileFieldsTcs.Task;
         }
 
-        public bool IsLoggedIn { get; }
-    }
+	}
 }

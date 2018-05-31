@@ -39,11 +39,13 @@ namespace LinkedIn.ViewModels
 
         public ICommand LoginCommand { get; set; }
         public ICommand LogoutCommand { get; set; }
+		public ICommand GetCustomProfileCommand { get; set; }
 
         public LoginPageViewModel()
         {
             LoginCommand = new Command(LoginAsync);
             LogoutCommand = new Command(Logout);
+			GetCustomProfileCommand = new Command<List<string>>(GetCustomUserProfile);
             IsLoggedIn = false;
 
             LinkedInClientManager = DependencyService.Get<ILinkedInClientManager>();
@@ -53,6 +55,22 @@ namespace LinkedIn.ViewModels
         {
             LinkedInClientManager.OnLogin += OnLoginCompleted;
 			LinkedInClientManager.OnError += OnAuthError;
+            
+			LinkedInClientManager.OnError += (sender, e) => 
+			{
+				
+			};
+
+			LinkedInClientManager.OnGetUserProfile += (sender, e) =>
+            {
+				var data = JObject.Parse(e.Data);
+				user.Email = data["emailAddress"].ToString();
+                user.Picture = new Uri(data["pictureUrl"].ToString());
+				var token = LinkedInClientManager.ActiveToken;
+				var expirationDate = LinkedInClientManager.TokenExpirationDate;
+            };
+
+			                     
             List<string> fieldsList = new List<string> {"first-name", "last-name", "email-address", "picture-url"};
 			try
 			{
@@ -79,9 +97,13 @@ namespace LinkedIn.ViewModels
                 var data = JObject.Parse(linkedInClientResultEventArgs.Data);
 
                 user.Name = data["firstName"] + " " + data["lastName"];
+
+				List<string> fieldsList = new List<string> { "first-name", "last-name", "email-address", "picture-url" };
+				GetCustomProfileCommand.Execute(fieldsList);
                 //user.Email = data["emailAddress"].ToString();
                 //user.Picture = new Uri(data["pictureUrl"].ToString());
                // App.Current.MainPage.DisplayAlert("Success", "It works!", "OK");
+
                 IsLoggedIn = true;
             }
             else
@@ -90,6 +112,49 @@ namespace LinkedIn.ViewModels
             }
             LinkedInClientManager.OnLogin -= OnLoginCompleted;
 			LinkedInClientManager.OnError -= OnAuthError;
+        }
+
+        
+		public async void GetCustomUserProfile(List<string> fields)
+        {
+			LinkedInClientManager.OnGetUserProfile += OnGetProfileCompleted;
+			LinkedInClientManager.OnError += OnGetProfileError;
+            try
+            {
+				await LinkedInClientManager.GetUserProfile(fields);
+            }
+            catch (LinkedInClientBaseException exception)
+            {
+                await App.Current.MainPage.DisplayAlert("Error", exception.Message, "OK");
+				LinkedInClientManager.OnGetUserProfile -= OnGetProfileCompleted;
+				LinkedInClientManager.OnError -= OnGetProfileError;
+            }
+        }
+
+		private void OnGetProfileCompleted(object sender, LinkedInClientResultEventArgs<string> linkedInClientResultEventArgs)
+        {
+            if (linkedInClientResultEventArgs.Data != null)
+            {
+                Debug.WriteLine("JSON RESPONSE: " + linkedInClientResultEventArgs.Data);
+                var data = JObject.Parse(linkedInClientResultEventArgs.Data);
+
+                user.Name = data["firstName"] + " " + data["lastName"];
+                user.Email = data["emailAddress"].ToString();
+                user.Picture = new Uri(data["pictureUrl"].ToString());
+                // App.Current.MainPage.DisplayAlert("Success", "It works!", "OK");
+                //IsLoggedIn = true;
+            }
+            else
+            {
+                App.Current.MainPage.DisplayAlert("Error", linkedInClientResultEventArgs.Message, "OK");
+            }
+			LinkedInClientManager.OnGetUserProfile -= OnGetProfileCompleted;
+            LinkedInClientManager.OnError -= OnAuthError;
+        }
+
+		private void OnGetProfileError(object sender, LinkedInClientErrorEventArgs e)
+        {
+            App.Current.MainPage.DisplayAlert("Error", e.Message, "OK");
         }
 
         public void Logout()

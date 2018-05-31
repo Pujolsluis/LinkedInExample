@@ -80,8 +80,14 @@ namespace LinkedIn.Services
         event EventHandler<LinkedInClientResultEventArgs<string>> OnLogin;
         event EventHandler OnLogout;
         Task<LinkedInResponse<string>> LoginAsync();
+		event EventHandler<LinkedInClientResultEventArgs<string>> OnGetUserProfile;
+		Task<LinkedInResponse<string>> GetUserProfile(List<string> fieldsList);
 		event EventHandler<LinkedInClientErrorEventArgs> OnError;
-        void GetUserProfile(List<string> fieldsList);
+
+		string ActiveToken { get; }
+
+        DateTime TokenExpirationDate { get; }
+
         void Logout();
         bool IsLoggedIn { get; }
     }

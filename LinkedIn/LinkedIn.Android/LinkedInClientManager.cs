@@ -21,9 +21,29 @@ namespace LinkedIn.Droid
         public static int AuthActivityID = Tag.GetHashCode() % Int16.MaxValue;
         public static LISessionManager LinkedInSessionManager { get; set; }
         public static Activity CurrentActivity { get; set; }
-        public List<string> FieldsList { get; set; }
-
+        
         static TaskCompletionSource<LinkedInResponse<string>> _loginTcs;
+		static TaskCompletionSource<LinkedInResponse<string>> _getProfileFieldsTcs;
+
+		public string ActiveToken
+        {
+			get
+			{
+				if (LinkedInSessionManager != null)
+					return LinkedInSessionManager.Session.AccessToken?.Value;
+				return string.Empty;
+			}
+        }
+
+		public DateTime TokenExpirationDate
+        {
+            get
+            {
+				if (LinkedInSessionManager != null)
+					return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(LinkedInSessionManager.Session.AccessToken.ExpiresOn);
+				return TokenExpirationDate;
+            }
+        }
 
         public bool IsLoggedIn { get; }
 
@@ -43,6 +63,7 @@ namespace LinkedIn.Droid
         public async Task<LinkedInResponse<string>> LoginAsync()
         {
             _loginTcs = new TaskCompletionSource<LinkedInResponse<string>>();
+
             LinkedInSessionManager.Init(CurrentActivity, BuildScope(), true, () =>
 			{
 				GetUserProfile();
@@ -59,8 +80,7 @@ namespace LinkedIn.Droid
 
             return await _loginTcs.Task;
         }
-
-
+              
         static EventHandler _onLogout;
         public event EventHandler OnLogout
         {
@@ -96,13 +116,6 @@ namespace LinkedIn.Droid
             return Scope.Build(Scope.RBasicprofile, Scope.REmailaddress);
         }
 
-
-        public void Dispose()
-        {
-
-        }
-
-        public IntPtr Handle { get; }
         public void OnAuthError(LIAuthError result)
         {
             System.Diagnostics.Debug.WriteLine(Tag + ": Connection to the client failed with error <" + result.ToString() + "> ");
@@ -110,7 +123,7 @@ namespace LinkedIn.Droid
 
         public void OnAuthSuccess()
         {
-             GetUserProfile(FieldsList);
+             //GetUserProfile();
         }
 
         public void OnActivityResult(int requestCode, Result resultCode, Intent data)
@@ -143,9 +156,18 @@ namespace LinkedIn.Droid
                 });
         }
 
-        public void GetUserProfile(List<string> fieldsList)
+		private static EventHandler<LinkedInClientResultEventArgs<string>> _onGetUserProfile;
+		public event EventHandler<LinkedInClientResultEventArgs<string>> OnGetUserProfile
         {
-            string fields = "";
+			add => _onGetUserProfile += value;
+			remove => _onGetUserProfile -= value;
+        }
+
+		async Task<LinkedInResponse<string>> ILinkedInClientManager.GetUserProfile(List<string> fieldsList)
+		{
+			_getProfileFieldsTcs = new TaskCompletionSource<LinkedInResponse<string>>();
+
+			string fields = "";
 
             for (int i = 0; i < fieldsList.Count; i++)
             {
@@ -175,18 +197,20 @@ namespace LinkedIn.Droid
                         new LinkedInClientResultEventArgs<string>(apiResponse.ResponseDataAsString, LinkedInActionStatus.Completed, apiResponse.StatusCode.ToString());
 
                     // Send the result to the receivers
-                    _onLogin.Invoke(this, linkedInArgs);
-                    _loginTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
-                }, 
+				    _onGetUserProfile.Invoke(this, linkedInArgs);
+				    _getProfileFieldsTcs.TrySetResult(new LinkedInResponse<string>(linkedInArgs));
+                },
                 error =>
                 {
-				    LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
+                    LinkedInClientErrorEventArgs errorEventArgs = new LinkedInClientErrorEventArgs();
                     errorEventArgs.Error = LinkedInClientErrorType.ApiHandlerError;
                     errorEventArgs.Message = LinkedInClientBaseException.ApiHelperErrorMessage;
                     _onError?.Invoke(this, errorEventArgs);
 
-                    _loginTcs.TrySetException(new LinkedInClientApiHelperErrorException(error.ApiErrorResponse.Message));
+				    _getProfileFieldsTcs.TrySetException(new LinkedInClientApiHelperErrorException(error.ApiErrorResponse.Message));
                 });
-        }
-    }
+
+			return await _getProfileFieldsTcs.Task;
+		}
+	}
 }

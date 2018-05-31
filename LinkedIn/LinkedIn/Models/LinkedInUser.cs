@@ -7,6 +7,7 @@ namespace LinkedIn.Models
 {
     public class LinkedInUser : INotifyPropertyChanged
     {
+		public string AccessToken { get; set; }
         public string Name { get; set; }
         public string Email { get; set; }
         public Uri Picture { get; set; }
