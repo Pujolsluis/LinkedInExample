@@ -69,7 +69,6 @@ namespace LinkedIn.iOS
                 true,
                 returnState =>
                 {
-				    var tokenExpiration = 
                     GetUserProfile();
                     Debug.WriteLine("Auth Successful");
                 },
