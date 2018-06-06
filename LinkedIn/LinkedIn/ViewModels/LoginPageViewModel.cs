@@ -78,8 +78,8 @@ namespace LinkedIn.ViewModels
 			}
 			finally
 			{
-				LinkedInClientManager.OnGetUserProfile += OnGetProfile;
-                LinkedInClientManager.OnError += OnAuthError;
+				LinkedInClientManager.OnGetUserProfile -= OnGetProfile;
+                LinkedInClientManager.OnError -= OnAuthError;
 			}
         }
 
