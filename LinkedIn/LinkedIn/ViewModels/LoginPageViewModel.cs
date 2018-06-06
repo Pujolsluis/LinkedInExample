@@ -29,7 +29,7 @@ namespace LinkedIn.ViewModels
             set { user.Email = value; }
         }
 
-        public Uri Picture
+        public string Picture
         {
             get { return user.Picture; }
             set { user.Picture = value; }
@@ -64,7 +64,34 @@ namespace LinkedIn.ViewModels
 				LinkedInClientManager.OnLogin -= OnLoginCompleted;
 				LinkedInClientManager.OnError -= OnAuthError;
 			}
+
+			try
+			{
+				LinkedInClientManager.OnGetUserProfile += OnGetProfile;
+				LinkedInClientManager.OnError += OnAuthError;
+				var profile = await LinkedInClientManager.GetUserProfile(fieldsList);
+
+			}
+			catch (LinkedInClientApiHelperErrorException e) 
+			{
+				
+			}
+			finally
+			{
+				LinkedInClientManager.OnGetUserProfile += OnGetProfile;
+                LinkedInClientManager.OnError += OnAuthError;
+			}
         }
+
+		private void OnGetProfile(object sender, LinkedInClientResultEventArgs<string> e)
+		{
+			if (e.Data != null)
+			{
+				var data = JObject.Parse(e.Data);
+				user.Picture = data["pictureUrl"].ToString();
+				user.Email = data["emailAddress"].ToString();	
+			}
+		}
 
 		private void OnAuthError(object sender, LinkedInClientErrorEventArgs e)
 		{

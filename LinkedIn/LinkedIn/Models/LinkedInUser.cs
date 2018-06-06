@@ -9,7 +9,7 @@ namespace LinkedIn.Models
     {
         public string Name { get; set; }
         public string Email { get; set; }
-        public Uri Picture { get; set; }
+        public string Picture { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
     }
 }
